@@ -1,0 +1,487 @@
+import React from 'react';
+import { signInWithGoogle, signInWithEmail } from '../services/authService';
+import { FaGoogle, FaEnvelope } from 'react-icons/fa';
+
+const AuthButton = ({ provider, label }) => {
+  const handleAuth = () => {
+    if (provider === 'google') {
+      signInWithGoogle().catch((error) => {
+        console.error("Error during Google sign-in:", error);
+      });
+    } else if (provider === 'email') {
+      signInWithEmail('test@example.com', 'password').catch((error) => {
+        console.error("Error during email sign-in:", error);
+      });
+    }
+  };
+
+  const getIcon = () => {
+    switch (provider) {
+      case 'google':
+        return <FaGoogle className="w-6 h-6 mr-2" />;
+      case 'email':
+        return <FaEnvelope className="w-6 h-6 mr-2" />;
+      default:
+        return null;
+    }
+  };
+
+  return (
+    <button onClick={handleAuth} className="flex items-center p-2 bg-blue-500 text-white rounded-full hover:bg-blue-700">
+      {getIcon()}
+      {label}
+    </button>
+  );
+};
+
+export default AuthButton;
+
+
+
+
+// // src/components/AuthButton.js
+// import React from 'react';
+// import { signInWithGoogle, signInWithEmail } from '../services/authService';
+
+// const AuthButton = ({ provider, icon, label }) => {
+//   const handleAuth = () => {
+//     if (provider === 'google') {
+//       signInWithGoogle().catch((error) => {
+//         console.error("Error during Google sign-in:", error);
+//       });
+//     } else if (provider === 'email') {
+//       signInWithEmail('test@example.com', 'password').catch((error) => {
+//         console.error("Error during email sign-in:", error);
+//       });
+//     }
+//   };
+
+//   return (
+//     <button onClick={handleAuth} className="flex items-center p-2 bg-blue-500 text-white rounded-full hover:bg-blue-700">
+//       <img src={icon} alt={label} className="w-6 h-6 mr-2" />
+//       {label}
+//     </button>
+//   );
+// };
+
+// export default AuthButton;
+
+
+// src/components/CounterItem.js
+import React, { useState } from 'react';
+
+const CounterItem = ({ counter, onUpdate, index }) => {
+  const [name, setName] = useState(counter.name);
+  const [count, setCount] = useState(counter.count);
+  const [color, setColor] = useState(counter.color);
+
+  const handleNameChange = (e) => {
+    setName(e.target.value);
+    onUpdate({ ...counter, name: e.target.value });
+  };
+
+  const handleIncrement = () => {
+    const newCount = count + 1;
+    setCount(newCount);
+    onUpdate({ ...counter, count: newCount });
+  };
+
+  const handleDecrement = () => {
+    const newCount = count - 1;
+    setCount(newCount);
+    onUpdate({ ...counter, count: newCount });
+  };
+
+  const handleColorChange = () => {
+    const newColor = color === '#ffffff' ? '#000000' : '#ffffff';
+    setColor(newColor);
+    onUpdate({ ...counter, color: newColor });
+  };
+
+  return (
+    <div className={`p-4 mb-2 ${color}`}>
+      <h3 className="text-lg">{index + 1}</h3>
+      <div className="flex items-center">
+        <button onClick={handleDecrement} className="bg-red-500 p-2">-</button>
+        <input
+          type="text"
+          value={name}
+          onChange={handleNameChange}
+          className="mx-2"
+        />
+        <button onClick={handleIncrement} className="bg-green-500 p-2">+</button>
+      </div>
+      <button onClick={handleColorChange} className="mt-2 rounded-full bg-blue-500 w-6 h-6"></button>
+    </div>
+  );
+};
+
+export default CounterItem;
+
+
+// src/components/CounterList.js
+import React, { useEffect, useState } from 'react';
+import CounterItem from './CounterItem';
+import { addData, getData } from '../services/firestoreService';
+
+const CounterList = ({ user }) => {
+  const [counters, setCounters] = useState([]);
+
+  useEffect(() => {
+    const fetchCounters = async () => {
+      if (user) {
+        const savedCounters = await getData(user.uid);
+        setCounters(savedCounters);
+      }
+    };
+    fetchCounters();
+  }, [user]);
+
+  const addCounter = () => {
+    const newCounters = [...counters, { name: '', color: '#ffffff', count: 0 }];
+    setCounters(newCounters);
+    if (user) {
+      addData(user.uid, newCounters);
+    }
+  };
+
+  const updateCounter = (index, updatedCounter) => {
+    const updatedCounters = [...counters];
+    updatedCounters[index] = updatedCounter;
+    setCounters(updatedCounters);
+    if (user) {
+      addData(user.uid, updatedCounters);
+    }
+  };
+
+  return (
+    <div>
+      <button onClick={addCounter} className="bg-green-500 p-2 text-white">
+        Añadir Contador
+      </button>
+      {counters.map((counter, index) => (
+        <CounterItem
+          key={index}
+          index={index}
+          counter={counter}
+          onUpdate={(updatedCounter) => updateCounter(index, updatedCounter)}
+        />
+      ))}
+    </div>
+  );
+};
+
+export default CounterList;
+
+
+
+// src/components/ExportButton.js
+import React from 'react';
+import { exportToExcel } from '../services/exportService';
+
+const ExportButton = () => {
+  const handleExport = () => {
+    // Llama a la función exportToExcel o exportToDoc según sea necesario
+    exportToExcel();
+  };
+
+  return (
+    <button onClick={handleExport} className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-700">
+      Exportar a Excel
+    </button>
+  );
+};
+
+export default ExportButton;
+
+
+
+// src/components/LogoutButton.js
+import React from 'react';
+import { useAuth } from '../contexts/AuthContext';
+
+const LogoutButton = () => {
+  const { logout } = useAuth();
+
+  return (
+    <button onClick={logout} className="p-2 bg-red-500 text-white rounded-full hover:bg-red-700">
+      Logout
+    </button>
+  );
+};
+
+export default LogoutButton;
+
+
+import React, { createContext, useContext, useEffect, useState } from 'react';
+import { onAuthStateChanged, signOut } from 'firebase/auth';
+import { auth } from '../firebase';
+
+const AuthContext = createContext();
+
+export const useAuth = () => useContext(AuthContext);
+
+export const AuthProvider = ({ children }) => {
+    const [user, setUser] = useState(null);
+
+    useEffect(() => {
+        const unsubscribe = onAuthStateChanged(auth, setUser);
+        return unsubscribe;
+    }, []);
+
+    const logout = () => {
+        signOut(auth);
+    };
+
+    return (
+        <AuthContext.Provider value={{ user, logout }}>
+        {children}
+        </AuthContext.Provider>
+    );
+};
+
+
+
+import React from 'react';
+import CounterList from '../components/CounterList';
+import { useAuth } from '../contexts/AuthContext';
+import ExportButton from '../components/ExportButton';
+import LogoutButton from '../components/LogoutButton';
+import { useLocation } from 'react-router-dom';
+
+const AppMain = () => {
+  const location = useLocation();
+  const { user } = useAuth();
+  const title = location?.state?.title || 'Mi Lista';
+
+  return (
+    <div className="container mx-auto p-4 bg-gray-900 text-white min-h-screen flex flex-col items-center justify-center">
+      <h1 className="text-3xl font-bold mb-4">{title}</h1>
+      {user && (
+        <div className="flex justify-end space-x-4 mb-4">
+          <span>{user.displayName}</span>
+          <LogoutButton />
+        </div>
+      )}
+      <CounterList user={user} />
+      <ExportButton />
+    </div>
+  );
+};
+
+export default AppMain;
+
+
+
+// src/pages/Home.js
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import AuthButton from '../components/AuthButton';
+
+const Home = () => {
+  const [inputValue, setInputValue] = useState('');
+  const navigate = useNavigate();
+
+  const handleInputChange = (e) => {
+    setInputValue(e.target.value);
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    navigate('/app');
+  };
+
+  return (
+    <div className="home-container">
+      <h1>¿Qué vas a contar?</h1>
+      <form onSubmit={handleSubmit}>
+        <input
+          type="text"
+          value={inputValue}
+          onChange={handleInputChange}
+          placeholder="Escribe aquí..."
+          className="home-input"
+        />
+        <button type="submit" className="home-button">Añadir</button>
+      </form>
+      <div className="auth-buttons">
+        <AuthButton provider="google" icon="/path-to-google-icon" label="Iniciar con Google" />
+        <AuthButton provider="email" icon="/path-to-email-icon" label="Iniciar con Email" />
+      </div>
+    </div>
+  );
+};
+
+export default Home;
+
+
+// src/services/authService.js
+import { signInWithEmailAndPassword, signInWithPopup } from 'firebase/auth';
+import { auth, googleProvider } from '../firebase'; // Asegúrate de importar auth correctamente
+
+export const signInWithEmail = (email, password) => {
+  // Lógica para iniciar sesión con email y contraseña
+  return signInWithEmailAndPassword(auth, email, password);
+};
+
+export const signInWithGoogle = () => {
+  // Lógica para iniciar sesión con Google
+  return signInWithPopup(auth, googleProvider);
+};
+
+
+
+// src/services/exportService.js
+import { saveAs } from 'file-saver';
+import * as XLSX from 'xlsx';
+
+export const exportToExcel = (data) => {
+  const worksheet = XLSX.utils.json_to_sheet(data);
+  const workbook = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(workbook, worksheet, "Sheet1");
+  const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+  const blob = new Blob([excelBuffer], { type: 'application/octet-stream' });
+  saveAs(blob, 'export.xlsx');
+};
+
+export const exportToDoc = (counters) => {
+  const docContent = counters.map(counter => `${counter.name}: ${counter.count}`).join('\n');
+  const blob = new Blob([docContent], { type: 'application/msword' });
+  saveAs(blob, 'counters.doc');
+};
+
+
+// src/services/firestoreService.js
+import { firestore } from '../firebase'; // Asegúrate de importar firestore correctamente
+import { collection, addDoc, getDocs } from 'firebase/firestore';
+
+export const addData = async (collectionName, data) => {
+  try {
+    const docRef = await addDoc(collection(firestore, collectionName), data);
+    console.log('Document written with ID: ', docRef.id);
+  } catch (e) {
+    console.error('Error adding document: ', e);
+  }
+};
+
+export const getData = async (collectionName) => {
+  const querySnapshot = await getDocs(collection(firestore, collectionName));
+  querySnapshot.forEach((doc) => {
+    console.log(`${doc.id} => ${doc.data()}`);
+  });
+};
+
+
+
+// src/App.js
+import React from 'react';
+import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
+import Home from './pages/Home';
+import AppMain from './pages/AppMain';
+
+const App = () => {
+  return (
+    <Router>
+      <Routes>
+        <Route path="/" element={<Home />} />
+        <Route path="/app" element={<AppMain />} />
+      </Routes>
+    </Router>
+  );
+};
+
+export default App;
+
+
+
+import { initializeApp } from 'firebase/app';
+import { getAuth, GoogleAuthProvider } from 'firebase/auth';
+import { getFirestore } from 'firebase/firestore';
+
+const firebaseConfig = {
+  apiKey: "AIzaSyCL0Z0r6hTs_uaIFfa7SMv5MIMAd_pCON4",
+  authDomain: "contador-edt.firebaseapp.com",
+  databaseURL: "https://contador-edt-default-rtdb.firebaseio.com",
+  projectId: "contador-edt",
+  storageBucket: "contador-edt.appspot.com",
+  messagingSenderId: "306954391497",
+  appId: "1:306954391497:web:2cd655b467b11416ebe218",
+  measurementId: "G-J1DP36JRH4"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const googleProvider = new GoogleAuthProvider();
+const firestore = getFirestore(app);
+
+export { auth, googleProvider, firestore };
+
+
+import React from 'react';
+import { createRoot } from 'react-dom/client';
+import './index.css';
+import App from './App';
+import { AuthProvider } from './contexts/AuthContext';
+
+const container = document.getElementById('root');
+const root = createRoot(container);
+
+root.render(
+  <React.StrictMode>
+    <AuthProvider>
+      <App />
+    </AuthProvider>
+  </React.StrictMode>
+);
+
+
+// En pages/home
+
+No aparece un logo en la parte superior izquierda
+
+En la parte derecha no aparece boton iniciar sesion
+
+Input escribir aqui debe guardar la informacion ingresada
+
+Al apretar en el boton añadir contador se crea un nuevo item en la pages/app. la informacion del texto de input reemplaza el valor del nuevo item
+
+
+
+El boton añadir debe aparecer 
+
+
+// En pages/app
+
+  El numero del item no cambia cuando apreto boton resta o suma
+
+  El boton de agregar añadir contador debe estar debajo del ultimo item de la lista y debe tener el mismo tamaño de ancho que un item de lista
+
+  No funciona el boton de color para cambiar el color del contenedor de item
+
+  No funciona exportar como archivo Excel (debe ser una tabla con el nombre de los items y su numero correspondiente)
+
+    Al apretar exportar debe descargar el archivo directamente
+
+  No aparecen los botones de inciar sesion que tenía en la home debajo de todo en la pagina
+
+  Debe haber un footer con un "Realizado por Mfellay - consultas aqui " el boton aqui tiene que tener un acceso a link (mailto:tinchoedt@gmail.com)
+
+  Al iniciar sesion el usuario se actualiza la pagina con esta informacion:  
+    En un nav en la parte superior de la pantalla
+    Al iniciar sesion el usuario se reemplazan los datos del icono en la parte superior derecha para que contenga su nombre, foto y tenga el boton de log out.
+     
+  
+  Si no inicia sesion debe aparecer en el nav
+    Icono iniciar sesion en la parte superior derecha
+
+
+
+
+Explicame en detalle que era lo que no funcionaba, y si todavía hay partes del codigo sin definir.
+
+Quiero que me busques los iconos que faltan en todos los casos
+
+Segui el diseño de mis instrucciones para los elementos que te escribi arriba
+
+Agrega diseño como para ver todos los elementos centrados y algunos detalles de diseño moderno
+
